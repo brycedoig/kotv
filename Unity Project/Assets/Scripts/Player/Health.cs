@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class Health : MonoBehaviour {
-
+	
 	protected int maxHealth = 100;
 	protected int health = 100;
 	protected int minHealth = 0;
@@ -12,7 +12,6 @@ public class Health : MonoBehaviour {
 	// Use this for initialization
 	protected virtual void Start() 
 	{
-	
 	}
 	
 	// Update is called once per frame
