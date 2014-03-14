@@ -95,7 +95,7 @@ public class PlayerController : MonoBehaviour
 		float xVel = rigidbody2D.velocity.x + velocityChange.x;
 		if(wallRight && xVel > 0 && !wallLeft)
 			velocityChange.x -= rigidbody2D.velocity.x + velocityChange.x;
-		else if(wallLeft && xVel < 0 && !wallLeft)
+		else if(wallLeft && xVel < 0 && !wallRight)
 			velocityChange.x += rigidbody2D.velocity.x - velocityChange.x;
 
 		return velocityChange;
