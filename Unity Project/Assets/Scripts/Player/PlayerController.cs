@@ -28,13 +28,16 @@ public class PlayerController : MonoBehaviour
 	private Transform leftCheckBottom;
 
 	private bool onGround = false;
+	private bool shouldJump = false;
 
 	Vector2 newVelocity = Vector2.zero;
 	
 	// Use this for initialization
 	void Start () 
 	{
+		rigidbody2D.fixedAngle = true;
 		numJumps = maxAirJumps;
+
 		groundCheckRight = transform.Find("groundCheckRight");
 		groundCheckLeft = transform.Find("groundCheckLeft");
 
@@ -47,8 +50,9 @@ public class PlayerController : MonoBehaviour
 
 	void FixedUpdate()
 	{
+		newVelocity = rigidbody2D.velocity + GetVelocityChange();
+		newVelocity.x = Mathf.Clamp(newVelocity.x, -maxXSpeed, maxXSpeed);
 		rigidbody2D.velocity = newVelocity;
-		rigidbody2D.fixedAngle = true;
 	}
 
 	// Update is called once per frame
@@ -59,8 +63,11 @@ public class PlayerController : MonoBehaviour
 		if(onGround)
 			numJumps = maxAirJumps;
 
-		newVelocity = rigidbody2D.velocity + GetVelocityChange();
-		newVelocity.x = Mathf.Clamp(newVelocity.x, -maxXSpeed, maxXSpeed);
+		if(Input.GetButtonDown("Jump") && CanJump())
+		{
+			shouldJump = true;
+		}
+		
 	}
 
 	Vector2 GetVelocityChange()
@@ -68,24 +75,28 @@ public class PlayerController : MonoBehaviour
 		Vector2 velocityChange = Vector2.zero;
 		float hInput = Input.GetAxis("Horizontal");
 
-		bool wallRight = Physics2D.Linecast(rightCheckTop.position, rightCheckBottom.position, 1 << LayerMask.NameToLayer("Ground"));
-		bool wallLeft = Physics2D.Linecast(leftCheckTop.position, leftCheckBottom.position, 1 << LayerMask.NameToLayer("Ground"));
-
 		if(Mathf.Abs(hInput) < stopThreshold)
 			velocityChange -= Vector2.right * GetStopForce() * Time.deltaTime * rigidbody2D.velocity.x;
 		else
 			velocityChange += Vector2.right * hInput * GetMovementForce() * Time.deltaTime;
 
-		if(Input.GetButtonDown("Jump") && CanJump())
+		if(shouldJump)
 		{
 			velocityChange += DoJump();
+			shouldJump = false;
 		}
+
+		bool wallRight = Physics2D.Linecast(rightCheckTop.position, rightCheckBottom.position, 1 << LayerMask.NameToLayer("Ground"));
+		bool wallLeft = Physics2D.Linecast(leftCheckTop.position, leftCheckBottom.position, 1 << LayerMask.NameToLayer("Ground"));
+
+		Debug.Log(wallRight);
+		Debug.Log(wallLeft);
+
 		float xVel = rigidbody2D.velocity.x + velocityChange.x;
-		if(wallRight && xVel > 0)
+		if(wallRight && xVel > 0 && !wallLeft)
 			velocityChange.x -= rigidbody2D.velocity.x + velocityChange.x;
-		else if(wallLeft && xVel < 0)
+		else if(wallLeft && xVel < 0 && !wallLeft)
 			velocityChange.x += rigidbody2D.velocity.x - velocityChange.x;
-			
 
 		return velocityChange;
 	}
