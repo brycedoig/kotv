@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class PlayerController : MonoBehaviour 
 {
 	//public int maxSpeed = 10;
+	public float maxXSpeed = 10f;
 	public float jumpStrength = 10f;
 	public int maxAirJumps = 1;
 	private int numJumps = 0;
@@ -17,6 +18,8 @@ public class PlayerController : MonoBehaviour
 	
 	public float airStopForce = 2f;
 	public float groundStopForce = 10f;
+
+	private bool onGround = false;
 	
 	// Use this for initialization
 	void Start () 
@@ -28,13 +31,21 @@ public class PlayerController : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		rigidbody2D.velocity += GetVelocityChange();
+		if(onGround)
+			numJumps = maxAirJumps;
+
+		Vector2 newVelocity = rigidbody2D.velocity + GetVelocityChange();
+
+		newVelocity.x = Mathf.Clamp(newVelocity.x, -maxXSpeed, maxXSpeed);
+
+		rigidbody2D.velocity = newVelocity;
 	}
 
 	Vector2 GetVelocityChange()
 	{
 		Vector2 velocityChange = Vector2.zero;
 		float hInput = Input.GetAxis("Horizontal");
+
 		if(Mathf.Abs(hInput) < stopThreshold)
 			velocityChange -= Vector2.right * GetStopForce() * Time.deltaTime * rigidbody2D.velocity.x;
 		else
@@ -61,7 +72,7 @@ public class PlayerController : MonoBehaviour
 
 	bool OnGround()
 	{
-		return true;
+		return onGround;
 	}
 
 	float GetStopForce()
@@ -84,4 +95,16 @@ public class PlayerController : MonoBehaviour
 	{
 		return numJumps > 0;
 	}	
+
+	void OnCollisionEnter2D(Collision2D coll) 
+	{
+		if (coll.gameObject.tag == "Ground")
+			onGround = true;	
+	}
+
+	void OnCollisionExit2D(Collision2D coll) 
+	{
+		if (coll.gameObject.tag == "Ground")
+			onGround = false;		
+	}
 }
