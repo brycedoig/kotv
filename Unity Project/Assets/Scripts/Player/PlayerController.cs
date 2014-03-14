@@ -18,33 +18,58 @@ public class PlayerController : MonoBehaviour
 	
 	public float airStopForce = 2f;
 	public float groundStopForce = 10f;
+	
+	private Transform groundCheckRight;
+	private Transform groundCheckLeft;
+	
+	private Transform rightCheckTop;
+	private Transform rightCheckBottom;
+	private Transform leftCheckTop;
+	private Transform leftCheckBottom;
 
 	private bool onGround = false;
+
+	Vector2 newVelocity = Vector2.zero;
 	
 	// Use this for initialization
 	void Start () 
 	{
 		numJumps = maxAirJumps;
+		groundCheckRight = transform.Find("groundCheckRight");
+		groundCheckLeft = transform.Find("groundCheckLeft");
 
+		rightCheckTop = transform.Find("rightCheckTop");
+		rightCheckBottom = transform.Find("rightCheckBottom");
+
+		leftCheckTop = transform.Find ("leftCheckTop");
+		leftCheckBottom = transform.Find ("leftCheckBottom");
+	}
+
+	void FixedUpdate()
+	{
+		rigidbody2D.velocity = newVelocity;
+		rigidbody2D.fixedAngle = true;
 	}
 
 	// Update is called once per frame
 	void Update ()
 	{
+		onGround = Physics2D.Linecast(groundCheckLeft.position, groundCheckRight.position, 1 << LayerMask.NameToLayer("Ground"));
+	
 		if(onGround)
 			numJumps = maxAirJumps;
 
-		Vector2 newVelocity = rigidbody2D.velocity + GetVelocityChange();
-
+		newVelocity = rigidbody2D.velocity + GetVelocityChange();
 		newVelocity.x = Mathf.Clamp(newVelocity.x, -maxXSpeed, maxXSpeed);
-
-		rigidbody2D.velocity = newVelocity;
 	}
 
 	Vector2 GetVelocityChange()
 	{
 		Vector2 velocityChange = Vector2.zero;
 		float hInput = Input.GetAxis("Horizontal");
+
+		bool wallRight = Physics2D.Linecast(rightCheckTop.position, rightCheckBottom.position, 1 << LayerMask.NameToLayer("Ground"));
+		bool wallLeft = Physics2D.Linecast(leftCheckTop.position, leftCheckBottom.position, 1 << LayerMask.NameToLayer("Ground"));
 
 		if(Mathf.Abs(hInput) < stopThreshold)
 			velocityChange -= Vector2.right * GetStopForce() * Time.deltaTime * rigidbody2D.velocity.x;
@@ -55,6 +80,12 @@ public class PlayerController : MonoBehaviour
 		{
 			velocityChange += DoJump();
 		}
+		float xVel = rigidbody2D.velocity.x + velocityChange.x;
+		if(wallRight && xVel > 0)
+			velocityChange.x -= rigidbody2D.velocity.x + velocityChange.x;
+		else if(wallLeft && xVel < 0)
+			velocityChange.x += rigidbody2D.velocity.x - velocityChange.x;
+			
 
 		return velocityChange;
 	}
@@ -95,16 +126,4 @@ public class PlayerController : MonoBehaviour
 	{
 		return numJumps > 0;
 	}	
-
-	void OnCollisionEnter2D(Collision2D coll) 
-	{
-		if (coll.gameObject.tag == "Ground")
-			onGround = true;	
-	}
-
-	void OnCollisionExit2D(Collision2D coll) 
-	{
-		if (coll.gameObject.tag == "Ground")
-			onGround = false;		
-	}
 }
